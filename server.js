@@ -18,7 +18,15 @@ app.get('/messages', async (req, res) => {
 });
 
 app.post('/messages', async (req, res) => {
-  const { author, content, blockId } = req.body;
+  let { author, content, blockId } = req.body || {};
+  // Accept raw string body as content
+  if (typeof req.body === 'string' && !content) {
+    content = req.body;
+  }
+  // Fallback to query param
+  if (!content && req.query && req.query.content) {
+    content = req.query.content;
+  }
   if (!content) return res.status(400).json({ error: 'content is required' });
   try {
     const saved = await db.addMessage({ author, content, blockId });

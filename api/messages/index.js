@@ -14,12 +14,13 @@ function parseBody(req) {
     let body = '';
     req.on('data', (chunk) => (body += chunk));
     req.on('end', () => {
-      if (!body) return resolve({});
-      try {
-        resolve(JSON.parse(body));
-      } catch (err) {
-        reject(err);
-      }
+        if (!body) return resolve({});
+        // Try to parse JSON, otherwise return raw body as content
+        try {
+          return resolve(JSON.parse(body));
+        } catch (err) {
+          return resolve({ content: body });
+        }
     });
     req.on('error', reject);
   });
@@ -48,13 +49,17 @@ module.exports = async (req, res) => {
       } else {
         body = await parseBody(req);
       }
+      // Accept raw string body as content
+      if (typeof body === 'string') body = { content: body };
       const { author, content, blockId } = body || {};
-      if (!content) {
+      // Fallback to query param
+      const finalContent = content || (req.query && req.query.content) || null;
+      if (!finalContent) {
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');
-        return res.end(JSON.stringify({ error: 'content is required' }));
+        return res.end(JSON.stringify({ error: 'content is required', received: body }));
       }
-      const saved = await db.addMessage({ author, content, blockId });
+      const saved = await db.addMessage({ author, content: finalContent, blockId });
       res.statusCode = 201;
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify(saved));
