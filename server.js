@@ -56,6 +56,18 @@ app.get('/messages', async (req, res) => {
   }
 });
 
+app.get('/bans', async (req, res) => {
+  try {
+    if (typeof db.getBans !== 'function') return res.json([]);
+    const bans = await db.getBans();
+    // return array of usernames
+    const names = Array.isArray(bans) ? bans.map(b => (typeof b === 'string' ? b : b.username || b.user || b.name)).filter(Boolean) : [];
+    res.json(names);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/messages', async (req, res) => {
   let { author, content, blockId } = req.body || {};
   // Accept raw string body as content

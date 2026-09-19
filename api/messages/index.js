@@ -75,6 +75,8 @@ module.exports = async (req, res) => {
       return res.end(JSON.stringify(formatted));
     }
 
+    // bans endpoint is separate; route handled at /api/bans if needed
+
     if (req.method === 'POST') {
       let body;
       if (req.body && typeof req.body === 'object') {

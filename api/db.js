@@ -97,6 +97,17 @@ if (process.env.USE_VEREL_KV === '1') {
     return res.rows;
   }
 
+  async function getBans() {
+    // If there's a bans table in the schema, return usernames
+    try {
+      const r = await pool.query(`SELECT username FROM ${SCHEMA}.bans`);
+      return r.rows.map(x => x.username);
+    } catch (e) {
+      // no bans table
+      return [];
+    }
+  }
+
   async function addMessage({ author, content, blockId }) {
     const res = await pool.query(
       `INSERT INTO ${SCHEMA}.messages (author, content, blockId, createdAt) VALUES ($1,$2,$3,now()) RETURNING *`,
@@ -136,6 +147,23 @@ if (process.env.USE_VEREL_KV === '1') {
     const rows = await readFile();
     // Return chronological order (oldest first)
     return rows.sort((a, b) => (a.id || 0) - (b.id || 0));
+  }
+
+  async function getBans() {
+    // Look for bans.json or bans array inside messages file
+    try {
+      const raw = await readFile();
+      // if file is an object with bans key
+      if (Array.isArray(raw.bans)) return raw.bans.map(b => (typeof b === 'string' ? b : b.username || b.user || b.name)).filter(Boolean);
+    } catch (e) {}
+    // fallback to separate bans.json
+    try {
+      const bansRaw = await fs.readFile(path.join(__dirname, '..', '..', 'bans.json'), 'utf8');
+      const bans = JSON.parse(bansRaw);
+      return Array.isArray(bans) ? bans.map(b => (typeof b === 'string' ? b : b.username || b.user || b.name)).filter(Boolean) : [];
+    } catch (e) {
+      return [];
+    }
   }
 
   async function addMessage({ author, content, blockId }) {

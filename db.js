@@ -24,6 +24,15 @@ function getAllMessages() {
   });
 }
 
+function getBans() {
+  return new Promise((resolve) => {
+    db.all("SELECT username FROM bans", (err, rows) => {
+      if (err || !rows) return resolve([]);
+      resolve(rows.map(r => r.username));
+    });
+  });
+}
+
 function addMessage({ author, content, blockId }) {
   return new Promise((resolve, reject) => {
     const createdAt = new Date().toISOString();
