@@ -54,6 +54,14 @@ if (process.env.USE_VEREL_KV === '1') {
 } else if (CONNECTION_STRING) {
   // Use Postgres (Supabase) when a connection string is available
   const { Pool } = require('pg');
+  // Some Supabase setups use certificates that Node may reject; disable strict TLS verification
+  // for the DB client when the connection string comes from STORAGE_POSTGRES_* or DATABASE_*.
+  // This sets a global Node option — acceptable here for compatibility, but be aware of security implications.
+  if (!process.env.NODE_TLS_REJECT_UNAUTHORIZED) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    console.log('[codetorch] Warning: disabled TLS certificate verification for Postgres connections (NODE_TLS_REJECT_UNAUTHORIZED=0)');
+  }
+
   const pool = new Pool({ connectionString: CONNECTION_STRING, ssl: { rejectUnauthorized: false } });
 
   // Use a dedicated schema 'codetorch' for isolation
