@@ -33,6 +33,24 @@ function getBans() {
   });
 }
 
+function addBan(username, reason) {
+  return new Promise((resolve, reject) => {
+    db.run('INSERT OR IGNORE INTO bans (username, reason, createdAt) VALUES (?,?,?)', [username, reason || null, new Date().toISOString()], function(err) {
+      if (err) return reject(err);
+      resolve(username);
+    });
+  });
+}
+
+function removeBan(username) {
+  return new Promise((resolve, reject) => {
+    db.run('DELETE FROM bans WHERE LOWER(username)=LOWER(?)', [username], function(err) {
+      if (err) return reject(err);
+      resolve(username);
+    });
+  });
+}
+
 function addMessage({ author, content, blockId }) {
   return new Promise((resolve, reject) => {
     const createdAt = new Date().toISOString();

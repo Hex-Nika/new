@@ -49,6 +49,31 @@ if (process.env.USE_VEREL_KV === '1') {
     return msg;
   }
 
+  async function getBans() {
+    const ids = (await kv.get(`${PREFIX}:bans`)) || [];
+    return ids;
+  }
+
+  async function addBan(username, reason) {
+    const uname = String(username);
+    const ids = (await kv.get(`${PREFIX}:bans`)) || [];
+    if (!ids.includes(uname)) ids.push(uname);
+    await kv.set(`${PREFIX}:bans`, ids);
+    if (reason) await kv.set(`${PREFIX}:ban:reason:${uname}`, reason);
+    return uname;
+  }
+
+  async function removeBan(username) {
+    const uname = String(username);
+    const ids = (await kv.get(`${PREFIX}:bans`)) || [];
+    const filtered = ids.filter(x => x !== uname);
+    await kv.set(`${PREFIX}:bans`, filtered);
+    await kv.delete(`${PREFIX}:ban:reason:${uname}`);
+    return uname;
+  }
+
+  module.exports = { getAllMessages, addMessage, getBans, addBan, removeBan };
+
   module.exports = { getAllMessages, addMessage };
 
 } else if (CONNECTION_STRING) {
@@ -98,14 +123,25 @@ if (process.env.USE_VEREL_KV === '1') {
   }
 
   async function getBans() {
-    // If there's a bans table in the schema, return usernames
     try {
       const r = await pool.query(`SELECT username FROM ${SCHEMA}.bans`);
       return r.rows.map(x => x.username);
     } catch (e) {
-      // no bans table
       return [];
     }
+  }
+
+  async function addBan(username, reason) {
+    const res = await pool.query(
+      `INSERT INTO ${SCHEMA}.bans (username, reason, createdAt) VALUES ($1,$2,now()) ON CONFLICT (username) DO UPDATE SET reason = EXCLUDED.reason RETURNING *`,
+      [username, reason || null]
+    );
+    return res.rows[0];
+  }
+
+  async function removeBan(username) {
+    await pool.query(`DELETE FROM ${SCHEMA}.bans WHERE LOWER(username) = LOWER($1)`, [username]);
+    return username;
   }
 
   async function addMessage({ author, content, blockId }) {
@@ -117,7 +153,7 @@ if (process.env.USE_VEREL_KV === '1') {
     return res.rows[0];
   }
 
-  module.exports = { getAllMessages, addMessage };
+  module.exports = { getAllMessages, addMessage, getBans, addBan, removeBan };
 
 } else {
   // Persist to project file when running locally; use /tmp on Vercel (ephemeral).
@@ -164,6 +200,37 @@ if (process.env.USE_VEREL_KV === '1') {
     } catch (e) {
       return [];
     }
+  }
+
+  async function addBan(username, reason) {
+    // Append to bans.json
+    const fp = path.join(__dirname, '..', '..', 'bans.json');
+    let arr = [];
+    try {
+      const raw = await fs.readFile(fp, 'utf8');
+      arr = JSON.parse(raw) || [];
+    } catch (e) {
+      arr = [];
+    }
+    const uname = String(username);
+    if (!arr.includes(uname)) arr.push(uname);
+    await fs.writeFile(fp, JSON.stringify(arr, null, 2), 'utf8');
+    return uname;
+  }
+
+  async function removeBan(username) {
+    const fp = path.join(__dirname, '..', '..', 'bans.json');
+    let arr = [];
+    try {
+      const raw = await fs.readFile(fp, 'utf8');
+      arr = JSON.parse(raw) || [];
+    } catch (e) {
+      arr = [];
+    }
+    const uname = String(username);
+    arr = arr.filter(x => x !== uname);
+    await fs.writeFile(fp, JSON.stringify(arr, null, 2), 'utf8');
+    return uname;
   }
 
   async function addMessage({ author, content, blockId }) {
