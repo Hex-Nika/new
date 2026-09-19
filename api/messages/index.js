@@ -54,7 +54,23 @@ module.exports = async (req, res) => {
       if (typeof body === 'string') body = { content: body };
       const { author, content, blockId } = body || {};
       // Fallback to query param
-      const finalContent = content || (req.query && req.query.content) || null;
+      let finalContent = content || (req.query && req.query.content) || null;
+      // If finalContent is a JSON string, try to parse and unwrap nested fields
+      if (typeof finalContent === 'string') {
+        const s = finalContent.trim();
+        if (s.startsWith('{') || s.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(s);
+            if (parsed && typeof parsed === 'object') {
+              if (parsed.content) finalContent = parsed.content;
+              if (!author && parsed.author) author = parsed.author;
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+
       if (!finalContent) {
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');

@@ -28,6 +28,23 @@ app.post('/messages', async (req, res) => {
   if (!content && req.query && req.query.content) {
     content = req.query.content;
   }
+  // If content is a JSON string containing an object, unwrap it
+  if (typeof content === 'string') {
+    const s = content.trim();
+    if ((s.startsWith('{') || s.startsWith('['))) {
+      try {
+        const parsed = JSON.parse(s);
+        if (parsed && typeof parsed === 'object') {
+          // If parsed has its own author/content, prefer them
+          if (parsed.content) content = parsed.content;
+          if (parsed.author) author = parsed.author;
+        }
+      } catch (e) {
+        // ignore parse errors
+      }
+    }
+  }
+
   if (!content) return res.status(400).json({ error: 'content is required' });
   try {
     const saved = await db.addMessage({ author, content, blockId });
