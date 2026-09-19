@@ -72,6 +72,28 @@ POST /messages example JSON body:
 - Database file `messages.db` will be created in the project root.
 - If you want auto-reload in development, install `nodemon` and run `npm run dev`.
 
+### Making messages permanent in Postgres (Supabase)
+
+To persist local messages to your Supabase/Postgres database:
+
+1. Set `DATABASE_URL` locally or pass it as an argument.
+
+PowerShell:
+```powershell
+$env:DATABASE_URL = "postgresql://..."
+npm run migrate
+```
+
+Or:
+
+```bash
+DATABASE_URL="postgresql://..." npm run migrate
+```
+
+2. The migration script reads `messages.json` from the project root (created when running locally) and inserts missing rows into the `messages` table. It avoids inserting exact duplicates based on `author`, `content`, and `createdAt`.
+
+3. After migration, deploy to Vercel with `DATABASE_URL` configured, and all new messages will be saved to Postgres permanently.
+
 ### Chat filter
 
 This project includes a simple chat filter that masks configured bad words with asterisks. Configuration options:
