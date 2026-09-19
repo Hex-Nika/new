@@ -15,7 +15,31 @@ app.get('/', (req, res) => res.json({ ok: true, api: 'Codetorch Messages' }));
 
 app.get('/messages', async (req, res) => {
   try {
-    const messages = await db.getAllMessages();
+    let messages = await db.getAllMessages();
+
+    // Query helpers
+    const q = req.query.q || req.query.filter;
+    if (q) {
+      const qi = String(q).toLowerCase();
+      messages = messages.filter(m =>
+        String(m.author || '').toLowerCase().includes(qi) ||
+        String(m.content || '').toLowerCase().includes(qi)
+      );
+    }
+
+    const since = req.query.since ? parseInt(req.query.since, 10) : null;
+    if (since) messages = messages.filter(m => (m.id || 0) > since);
+
+    const offset = req.query.offset ? Math.max(0, parseInt(req.query.offset, 10) || 0) : 0;
+    const limit = req.query.limit ? Math.max(0, parseInt(req.query.limit, 10) || 0) : null;
+    if (offset) messages = messages.slice(offset);
+    if (limit) messages = messages.slice(0, limit);
+
+    // Return raw/full objects when requested
+    if (req.query.full === 'true' || req.query.raw === 'true') {
+      return res.json(messages);
+    }
+
     const formatted = messages.map(m => `${m.author || 'anonymous'}: ${m.content}`);
     res.json(formatted);
   } catch (err) {

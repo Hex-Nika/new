@@ -37,7 +37,30 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === 'GET') {
-      const messages = await db.getAllMessages();
+      let messages = await db.getAllMessages();
+
+      const q = req.query && (req.query.q || req.query.filter);
+      if (q) {
+        const qi = String(q).toLowerCase();
+        messages = messages.filter(m =>
+          String(m.author || '').toLowerCase().includes(qi) ||
+          String(m.content || '').toLowerCase().includes(qi)
+        );
+      }
+
+      const since = req.query && req.query.since ? parseInt(req.query.since, 10) : null;
+      if (since) messages = messages.filter(m => (m.id || 0) > since);
+
+      const offset = req.query && req.query.offset ? Math.max(0, parseInt(req.query.offset, 10) || 0) : 0;
+      const limit = req.query && req.query.limit ? Math.max(0, parseInt(req.query.limit, 10) || 0) : null;
+      if (offset) messages = messages.slice(offset);
+      if (limit) messages = messages.slice(0, limit);
+
+      if (req.query && (req.query.full === 'true' || req.query.raw === 'true')) {
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify(messages));
+      }
+
       const formatted = messages.map(m => `${m.author || 'anonymous'}: ${m.content}`);
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify(formatted));

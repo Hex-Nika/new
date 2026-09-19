@@ -50,6 +50,15 @@ Warning: Never commit your database connection string to source control. Keep se
 - `GET /messages` — returns all messages
 - `POST /messages` — create a new message. JSON body example:
 
+GET /messages options:
+
+- `?q=term` or `?filter=term` — filter by author or content (case-insensitive)
+- `?since=<id>` — return messages with `id` greater than given id
+- `?offset=<n>&limit=<m>` — pagination
+- `?full=true` or `?raw=true` — return full message objects instead of formatted strings
+
+POST /messages example JSON body:
+
 ```json
 {
   "author": "Alice",
