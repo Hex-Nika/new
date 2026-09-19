@@ -53,8 +53,17 @@ module.exports = async (req, res) => {
 
       const offset = req.query && req.query.offset ? Math.max(0, parseInt(req.query.offset, 10) || 0) : 0;
       const limit = req.query && req.query.limit ? Math.max(0, parseInt(req.query.limit, 10) || 0) : null;
-      if (offset) messages = messages.slice(offset);
-      if (limit) messages = messages.slice(0, limit);
+      if (limit && limit > 0) {
+        if (offset) {
+          messages = messages.slice(offset);
+          messages = messages.slice(0, limit);
+        } else {
+          // Return the last `limit` messages (most recent)
+          messages = messages.slice(Math.max(messages.length - limit, 0));
+        }
+      } else if (offset) {
+        messages = messages.slice(offset);
+      }
 
       if (req.query && (req.query.full === 'true' || req.query.raw === 'true')) {
         res.setHeader('Content-Type', 'application/json');
