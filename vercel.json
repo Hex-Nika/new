@@ -5,6 +5,11 @@
   ],
   "routes": [
     { "src": "/messages", "dest": "/api/messages" },
-    { "src": "/api/messages", "dest": "/api/messages" }
+    { "src": "/api/messages", "dest": "/api/messages" },
+    { "src": "/bans", "dest": "/api/bans" },
+    { "src": "/api/bans", "dest": "/api/bans" },
+    { "src": "/admin/ban", "dest": "/api/admin/ban" },
+    { "src": "/admin/unban", "dest": "/api/admin/unban" },
+    { "src": "/api/admin/(.*)", "dest": "/api/admin/$1" }
   ]
 }
