@@ -18,7 +18,8 @@ function loadBadWords() {
 }
 
 const BAD_WORDS = loadBadWords();
-const BAD_RE = BAD_WORDS.length ? new RegExp(`\\b(${BAD_WORDS.map(w => w.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|')})\\b`, 'ig') : null;
+// Match bad words anywhere inside text (no word boundaries) so substrings like "bullshit" are detected.
+const BAD_RE = BAD_WORDS.length ? new RegExp(`(${BAD_WORDS.map(w => w.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|')})`, 'ig') : null;
 
 function maskWord(word) {
   return '*'.repeat([...word].length);
