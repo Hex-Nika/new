@@ -52,7 +52,7 @@ module.exports = async (req, res) => {
       }
       // Accept raw string body as content
       if (typeof body === 'string') body = { content: body };
-      const { author, content, blockId } = body || {};
+      let { author, content, blockId } = body || {};
       // Fallback to query param
       let finalContent = content || (req.query && req.query.content) || null;
       // If finalContent is a JSON string, try to parse and unwrap nested fields
