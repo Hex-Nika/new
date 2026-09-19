@@ -5,10 +5,18 @@ const os = require('os');
 // If DATABASE_URL is provided, use Postgres (Supabase). Otherwise fall back to a JSON file.
 if (process.env.DATABASE_URL) {
   const { Pool } = require('pg');
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URI, ssl: { rejectUnauthorized: false } });
 
   // Use a dedicated schema 'codetorch' for isolation
   const SCHEMA = process.env.DB_SCHEMA || 'codetorch';
+
+  // Log connection info (non-sensitive) to help debug Vercel logs
+  try {
+    const parsed = new URL(process.env.DATABASE_URL);
+    console.log(`[codetorch] Postgres init host=${parsed.hostname} port=${parsed.port || 5432} schema=${SCHEMA}`);
+  } catch (e) {
+    console.log('[codetorch] Postgres init (could not parse host) schema=' + SCHEMA);
+  }
 
   // Ensure schema and table exist using schema-qualified names
   (async () => {
@@ -23,10 +31,12 @@ if (process.env.DATABASE_URL) {
       )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS ${SCHEMA}_messages_created_at_idx ON ${SCHEMA}.messages (createdAt)`);
+    console.log(`[codetorch] Ensured schema/table exist in schema=${SCHEMA}`);
   })().catch((err) => console.error('Failed to initialize Postgres schema/table:', err));
 
   async function getAllMessages() {
     const res = await pool.query(`SELECT * FROM ${SCHEMA}.messages ORDER BY id ASC`);
+    console.log(`[codetorch] getAllMessages -> returned ${res.rowCount} rows`);
     return res.rows;
   }
 
@@ -35,6 +45,7 @@ if (process.env.DATABASE_URL) {
       `INSERT INTO ${SCHEMA}.messages (author, content, blockId, createdAt) VALUES ($1,$2,$3,now()) RETURNING *`,
       [author || null, content, blockId || null]
     );
+    console.log(`[codetorch] addMessage -> inserted id=${res.rows[0] && res.rows[0].id}`);
     return res.rows[0];
   }
 
