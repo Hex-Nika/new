@@ -16,7 +16,8 @@ db.serialize(() => {
 
 function getAllMessages() {
   return new Promise((resolve, reject) => {
-    db.all('SELECT * FROM messages ORDER BY id DESC', (err, rows) => {
+    // Return messages in chronological order (oldest first)
+    db.all('SELECT * FROM messages ORDER BY id ASC', (err, rows) => {
       if (err) return reject(err);
       resolve(rows);
     });

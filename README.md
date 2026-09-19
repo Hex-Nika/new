@@ -28,7 +28,9 @@ vercel --prod
 
 - The API will be available at `https://<your-deploy>/api/messages` or at `/messages` per `vercel.json` routes.
 
-Important: Vercel serverless functions run in ephemeral environments. The included JSON-backed DB stores data in the temporary filesystem (by default `/tmp/messages.json`) and is not persistent across cold starts or redeploys. For production use, configure an external database (Supabase, PlanetScale, Firebase, etc.) and set a `DATABASE_URL` in Vercel environment variables; then update `api/db.js` to connect to that database.
+Important: Vercel serverless functions run in ephemeral environments. The included JSON-backed DB stores data in the temporary filesystem (by default `/tmp/messages.json` on Vercel) and is not persistent across cold starts or redeploys — this will appear to "clear" frequently. When running locally (not on Vercel) the JSON DB is persisted to `messages.json` in the project root.
+
+For production use, use an external database (Supabase, PlanetScale, Firebase, Vercel KV, etc.) and set the relevant environment variables; then update `api/db.js` to connect to that database. If you'd like, I can add a Supabase or Vercel KV integration now.
 
 ## Endpoints
 
