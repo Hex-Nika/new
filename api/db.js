@@ -7,27 +7,32 @@ if (process.env.DATABASE_URL) {
   const { Pool } = require('pg');
   const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
-  // Ensure table exists
+  // Use a dedicated schema 'codetorch' for isolation
+  const SCHEMA = process.env.DB_SCHEMA || 'codetorch';
+
+  // Ensure schema and table exist using schema-qualified names
   (async () => {
+    await pool.query(`CREATE SCHEMA IF NOT EXISTS ${SCHEMA}`);
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS messages (
-        id SERIAL PRIMARY KEY,
+      CREATE TABLE IF NOT EXISTS ${SCHEMA}.messages (
+        id BIGSERIAL PRIMARY KEY,
         author TEXT,
         content TEXT NOT NULL,
         blockId TEXT,
         createdAt TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
-  })().catch((err) => console.error('Failed to initialize Postgres table:', err));
+    await pool.query(`CREATE INDEX IF NOT EXISTS ${SCHEMA}_messages_created_at_idx ON ${SCHEMA}.messages (createdAt)`);
+  })().catch((err) => console.error('Failed to initialize Postgres schema/table:', err));
 
   async function getAllMessages() {
-    const res = await pool.query('SELECT * FROM messages ORDER BY id ASC');
+    const res = await pool.query(`SELECT * FROM ${SCHEMA}.messages ORDER BY id ASC`);
     return res.rows;
   }
 
   async function addMessage({ author, content, blockId }) {
     const res = await pool.query(
-      'INSERT INTO messages (author, content, blockId, createdAt) VALUES ($1,$2,$3,now()) RETURNING *',
+      `INSERT INTO ${SCHEMA}.messages (author, content, blockId, createdAt) VALUES ($1,$2,$3,now()) RETURNING *`,
       [author || null, content, blockId || null]
     );
     return res.rows[0];
