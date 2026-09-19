@@ -29,7 +29,10 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.statusCode = 204 && res.end();
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    return res.end();
+  }
 
   try {
     if (req.method === 'GET') {
@@ -39,10 +42,16 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-      const body = await parseBody(req);
-      const { author, content, blockId } = body;
+      let body;
+      if (req.body && typeof req.body === 'object') {
+        body = req.body;
+      } else {
+        body = await parseBody(req);
+      }
+      const { author, content, blockId } = body || {};
       if (!content) {
         res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
         return res.end(JSON.stringify({ error: 'content is required' }));
       }
       const saved = await db.addMessage({ author, content, blockId });
