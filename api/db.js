@@ -2,8 +2,26 @@ const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
 
-// If USE_VEREL_KV=1 use Vercel KV; if DATABASE_URL or DATABASE_URI is provided, use Postgres; otherwise fall back to a JSON file.
-const CONNECTION_STRING = process.env.DATABASE_URL || process.env.DATABASE_URI || process.env.DATABASE_URI?.trim();
+// If USE_VEREL_KV=1 use Vercel KV; if a Postgres connection string is provided, use Postgres; otherwise fall back to a JSON file.
+// Prefer STORAGE_POSTGRES_URL (Supabase) when present.
+let CONNECTION_STRING = null;
+let CONNECTION_SOURCE = null;
+if (process.env.STORAGE_POSTGRES_URL) {
+  CONNECTION_STRING = process.env.STORAGE_POSTGRES_URL;
+  CONNECTION_SOURCE = 'STORAGE_POSTGRES_URL';
+} else if (process.env.STORAGE_POSTGRES_PRISMA_URL) {
+  CONNECTION_STRING = process.env.STORAGE_POSTGRES_PRISMA_URL;
+  CONNECTION_SOURCE = 'STORAGE_POSTGRES_PRISMA_URL';
+} else if (process.env.STORAGE_POSTGRES_URL_NON_POOLING) {
+  CONNECTION_STRING = process.env.STORAGE_POSTGRES_URL_NON_POOLING;
+  CONNECTION_SOURCE = 'STORAGE_POSTGRES_URL_NON_POOLING';
+} else if (process.env.DATABASE_URL) {
+  CONNECTION_STRING = process.env.DATABASE_URL;
+  CONNECTION_SOURCE = 'DATABASE_URL';
+} else if (process.env.DATABASE_URI) {
+  CONNECTION_STRING = process.env.DATABASE_URI.trim();
+  CONNECTION_SOURCE = 'DATABASE_URI';
+}
 
 if (process.env.USE_VEREL_KV === '1') {
   // Vercel KV backend
@@ -44,9 +62,9 @@ if (process.env.USE_VEREL_KV === '1') {
   // Log connection info (non-sensitive) to help debug Vercel logs
   try {
     const parsed = new URL(CONNECTION_STRING);
-    console.log(`[codetorch] Postgres init host=${parsed.hostname} port=${parsed.port || 5432} schema=${SCHEMA}`);
+    console.log(`[codetorch] Postgres init host=${parsed.hostname} port=${parsed.port || 5432} schema=${SCHEMA} source=${CONNECTION_SOURCE}`);
   } catch (e) {
-    console.log('[codetorch] Postgres init (could not parse host) schema=' + SCHEMA);
+    console.log('[codetorch] Postgres init (could not parse host) schema=' + SCHEMA + ' source=' + CONNECTION_SOURCE);
   }
 
   // Ensure schema and table exist using schema-qualified names
