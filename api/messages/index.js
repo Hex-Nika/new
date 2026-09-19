@@ -99,7 +99,10 @@ module.exports = async (req, res) => {
         res.setHeader('Content-Type', 'application/json');
         return res.end(JSON.stringify({ error: 'content is required', received: body }));
       }
-      const saved = await db.addMessage({ author, content: finalContent, blockId });
+      const { sanitizeText } = require(path.join(__dirname, '..', '..', 'filter'));
+      const safeAuthor = author ? sanitizeText(author) : null;
+      const safeContent = sanitizeText(finalContent);
+      const saved = await db.addMessage({ author: safeAuthor, content: safeContent, blockId });
       res.statusCode = 201;
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify(saved));

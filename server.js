@@ -76,7 +76,10 @@ app.post('/messages', async (req, res) => {
 
   if (!content) return res.status(400).json({ error: 'content is required' });
   try {
-    const saved = await db.addMessage({ author, content, blockId });
+    const { sanitizeText } = require('./filter');
+    const safeAuthor = author ? sanitizeText(author) : null;
+    const safeContent = sanitizeText(content);
+    const saved = await db.addMessage({ author: safeAuthor, content: safeContent, blockId });
     res.status(201).json(saved);
   } catch (err) {
     res.status(500).json({ error: err.message });

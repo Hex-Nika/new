@@ -71,3 +71,12 @@ POST /messages example JSON body:
 
 - Database file `messages.db` will be created in the project root.
 - If you want auto-reload in development, install `nodemon` and run `npm run dev`.
+
+### Chat filter
+
+This project includes a simple chat filter that masks configured bad words with asterisks. Configuration options:
+
+- Edit `badwords.txt` in the project root to add/remove words (one per line).
+- Or set `BAD_WORDS` environment variable as comma-separated words.
+
+The default `badwords.txt` contains a small list (`damn, hell, crap, shit, fuck`) — update as needed. The filter is intentionally conservative and does not include slurs by default; add or remove entries according to your moderation policy.
