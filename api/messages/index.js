@@ -38,8 +38,9 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       const messages = await db.getAllMessages();
+      const formatted = messages.map(m => `${m.author || 'anonymous'}: ${m.content}`);
       res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify(messages));
+      return res.end(JSON.stringify(formatted));
     }
 
     if (req.method === 'POST') {

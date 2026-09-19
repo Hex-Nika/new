@@ -11,7 +11,8 @@ app.get('/', (req, res) => res.json({ ok: true, api: 'Codetorch Messages' }));
 app.get('/messages', async (req, res) => {
   try {
     const messages = await db.getAllMessages();
-    res.json(messages);
+    const formatted = messages.map(m => `${m.author || 'anonymous'}: ${m.content}`);
+    res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
