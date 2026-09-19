@@ -2,17 +2,48 @@ const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
 
-// If DATABASE_URI is provided, use Postgres (Supabase). Otherwise fall back to a JSON file.
-if (process.env.DATABASE_URI) {
+// If USE_VEREL_KV=1 use Vercel KV; if DATABASE_URL or DATABASE_URI is provided, use Postgres; otherwise fall back to a JSON file.
+const CONNECTION_STRING = process.env.DATABASE_URL || process.env.DATABASE_URI || process.env.DATABASE_URI?.trim();
+
+if (process.env.USE_VEREL_KV === '1') {
+  // Vercel KV backend
+  const kv = require('@vercel/kv');
+  const PREFIX = process.env.KV_PREFIX || 'codetorch';
+
+  async function getAllMessages() {
+    const ids = (await kv.get(`${PREFIX}:ids`)) || [];
+    const rows = [];
+    for (const id of ids) {
+      const m = await kv.get(`${PREFIX}:msg:${id}`);
+      if (m) rows.push(m);
+    }
+    return rows.sort((a, b) => (a.id || 0) - (b.id || 0));
+  }
+
+  async function addMessage({ author, content, blockId }) {
+    const id = await kv.incr(`${PREFIX}:nextId`);
+    const createdAt = new Date().toISOString();
+    const msg = { id, author: author || null, content, blockId: blockId || null, createdAt };
+    await kv.set(`${PREFIX}:msg:${id}`, msg);
+    const ids = (await kv.get(`${PREFIX}:ids`)) || [];
+    ids.push(id);
+    await kv.set(`${PREFIX}:ids`, ids);
+    return msg;
+  }
+
+  module.exports = { getAllMessages, addMessage };
+
+} else if (CONNECTION_STRING) {
+  // Use Postgres (Supabase) when a connection string is available
   const { Pool } = require('pg');
-  const pool = new Pool({ connectionString: process.env.DATABASE_URI, ssl: { rejectUnauthorized: false } });
+  const pool = new Pool({ connectionString: CONNECTION_STRING, ssl: { rejectUnauthorized: false } });
 
   // Use a dedicated schema 'codetorch' for isolation
   const SCHEMA = process.env.DB_SCHEMA || 'codetorch';
 
   // Log connection info (non-sensitive) to help debug Vercel logs
   try {
-    const parsed = new URL(process.env.DATABASE_URI);
+    const parsed = new URL(CONNECTION_STRING);
     console.log(`[codetorch] Postgres init host=${parsed.hostname} port=${parsed.port || 5432} schema=${SCHEMA}`);
   } catch (e) {
     console.log('[codetorch] Postgres init (could not parse host) schema=' + SCHEMA);
