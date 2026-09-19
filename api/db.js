@@ -2,8 +2,8 @@ const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
 
-// If DATABASE_URL is provided, use Postgres (Supabase). Otherwise fall back to a JSON file.
-if (process.env.DATABASE_URL) {
+// If DATABASE_URI is provided, use Postgres (Supabase). Otherwise fall back to a JSON file.
+if (process.env.DATABASE_URI) {
   const { Pool } = require('pg');
   const pool = new Pool({ connectionString: process.env.DATABASE_URI, ssl: { rejectUnauthorized: false } });
 
@@ -12,7 +12,7 @@ if (process.env.DATABASE_URL) {
 
   // Log connection info (non-sensitive) to help debug Vercel logs
   try {
-    const parsed = new URL(process.env.DATABASE_URL);
+    const parsed = new URL(process.env.DATABASE_URI);
     console.log(`[codetorch] Postgres init host=${parsed.hostname} port=${parsed.port || 5432} schema=${SCHEMA}`);
   } catch (e) {
     console.log('[codetorch] Postgres init (could not parse host) schema=' + SCHEMA);
