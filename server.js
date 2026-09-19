@@ -1,6 +1,11 @@
 const express = require('express');
 const cors = require('cors');
-const db = require('./db');
+let db;
+if (process.env.DATABASE_URL) {
+  db = require('./api/db');
+} else {
+  db = require('./db');
+}
 
 const app = express();
 app.use(cors());

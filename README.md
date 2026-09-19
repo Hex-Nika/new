@@ -30,7 +30,20 @@ vercel --prod
 
 Important: Vercel serverless functions run in ephemeral environments. The included JSON-backed DB stores data in the temporary filesystem (by default `/tmp/messages.json` on Vercel) and is not persistent across cold starts or redeploys — this will appear to "clear" frequently. When running locally (not on Vercel) the JSON DB is persisted to `messages.json` in the project root.
 
-For production use, use an external database (Supabase, PlanetScale, Firebase, Vercel KV, etc.) and set the relevant environment variables; then update `api/db.js` to connect to that database. If you'd like, I can add a Supabase or Vercel KV integration now.
+For production use, use an external database (Supabase, PlanetScale, Firebase, Vercel KV, etc.). This project supports Supabase/Postgres via the `DATABASE_URL` environment variable.
+
+Locally set `DATABASE_URL` (do not commit it) before starting the server, or set it in Vercel's dashboard as a secret environment variable.
+
+Example local run (PowerShell):
+
+```powershell
+$env:DATABASE_URL = "postgresql://..."
+npm start
+```
+
+On Vercel: add `DATABASE_URL` in Project Settings → Environment Variables.
+
+Warning: Never commit your database connection string to source control. Keep secrets in environment variables or Vercel secrets.
 
 ## Endpoints
 
