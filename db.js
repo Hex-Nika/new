@@ -9,7 +9,6 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     author TEXT,
     content TEXT NOT NULL,
-    ip TEXT,
     blockId TEXT,
     createdAt TEXT NOT NULL
   )`);
