@@ -27,13 +27,33 @@ function parseBody(req) {
 }
 
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const ALLOWED_ORIGIN = 'https://blockcomplier.codetorch.com';
+  const reqOrigin = req.headers.origin || '';
+  const referer = req.headers.referer || req.headers.referrer || '';
+  const allowed = (reqOrigin === ALLOWED_ORIGIN) || (referer && referer.startsWith(ALLOWED_ORIGIN));
+
+  // Only allow requests coming from the exact allowed origin (require Origin or Referer).
   if (req.method === 'OPTIONS') {
+    if (!allowed) {
+      res.statusCode = 403;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: 'Forbidden' }));
+    }
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
     res.statusCode = 204;
     return res.end();
   }
+
+  if (!allowed) {
+    res.statusCode = 403;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ error: 'Forbidden' }));
+  }
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
 
   try {
     if (req.method === 'GET') {
