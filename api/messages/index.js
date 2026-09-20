@@ -27,7 +27,7 @@ function parseBody(req) {
 }
 
 module.exports = async (req, res) => {
-  const ALLOWED_ORIGINS = ['https://blockcomplier.codetorch.com', 'https://codetorch.com'];
+  const ALLOWED_ORIGINS = ['https://blockcomplier.codetorch.com', 'https://codetorch.com', 'https://codetorch.net'];
   const reqOrigin = req.headers.origin || '';
   const referer = req.headers.referer || req.headers.referrer || '';
 
