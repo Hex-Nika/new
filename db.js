@@ -33,6 +33,25 @@ function getLatestTimestamp() {
   });
 }
 
+function getLastUpdateTimestamp() {
+  return new Promise((resolve, reject) => {
+    db.get("SELECT value FROM meta WHERE key='last_update' LIMIT 1", (err, row) => {
+      if (err || !row) return resolve(null);
+      resolve(row.value || null);
+    });
+  });
+}
+
+function setLastUpdateTimestamp(ts) {
+  return new Promise((resolve, reject) => {
+    const v = ts || new Date().toISOString();
+    db.run("INSERT INTO meta(key,value) VALUES ('last_update',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [v], function(err) {
+      if (err) return reject(err);
+      resolve(v);
+    });
+  });
+}
+
 function getBans() {
   return new Promise((resolve) => {
     db.all("SELECT username FROM bans", (err, rows) => {

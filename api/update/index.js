@@ -10,9 +10,15 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') { res.statusCode = 204; return res.end(); }
 
   try {
+    if (req.method === 'POST') {
+      if (typeof db.setLastUpdateTimestamp === 'function') await db.setLastUpdateTimestamp();
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ ok: true }));
+    }
+
     if (req.method !== 'GET') { res.statusCode = 405; res.setHeader('Content-Type', 'application/json'); return res.end(JSON.stringify({ error: 'Method not allowed' })); }
-    if (typeof db.getLatestTimestamp !== 'function') { res.setHeader('Content-Type', 'application/json'); return res.end(JSON.stringify({ updated: false })); }
-    const last = await db.getLatestTimestamp();
+    if (typeof db.getLastUpdateTimestamp !== 'function') { res.setHeader('Content-Type', 'application/json'); return res.end(JSON.stringify({ updated: false })); }
+    const last = await db.getLastUpdateTimestamp();
     if (!last) return res.end(JSON.stringify({ updated: false }));
     const lastDate = new Date(last);
     const diffMs = Date.now() - lastDate.getTime();

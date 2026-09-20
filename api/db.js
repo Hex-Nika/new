@@ -57,6 +57,16 @@ if (process.env.USE_VEREL_KV === '1') {
     return m && m.createdAt ? new Date(m.createdAt).toISOString() : null;
   }
 
+  async function getLastUpdateTimestamp() {
+    return await kv.get(`${PREFIX}:last_update`);
+  }
+
+  async function setLastUpdateTimestamp(ts) {
+    const v = ts || new Date().toISOString();
+    await kv.set(`${PREFIX}:last_update`, v);
+    return v;
+  }
+
   async function getBans() {
     const ids = (await kv.get(`${PREFIX}:bans`)) || [];
     return ids;
@@ -120,6 +130,12 @@ if (process.env.USE_VEREL_KV === '1') {
         createdAt TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ${SCHEMA}.meta (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      )
+    `);
     await pool.query(`CREATE INDEX IF NOT EXISTS ${SCHEMA}_messages_created_at_idx ON ${SCHEMA}.messages (createdAt)`);
     console.log(`[codetorch] Ensured schema/table exist in schema=${SCHEMA}`);
   })().catch((err) => console.error('Failed to initialize Postgres schema/table:', err));
@@ -134,6 +150,22 @@ if (process.env.USE_VEREL_KV === '1') {
     const res = await pool.query(`SELECT createdAt FROM ${SCHEMA}.messages ORDER BY id DESC LIMIT 1`);
     if (res.rowCount === 0) return null;
     return res.rows[0].createdat || res.rows[0].createdAt;
+  }
+
+  async function getLastUpdateTimestamp() {
+    try {
+      const r = await pool.query(`SELECT value FROM ${SCHEMA}.meta WHERE key = 'last_update' LIMIT 1`);
+      if (r.rowCount === 0) return null;
+      return r.rows[0].value;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function setLastUpdateTimestamp(ts) {
+    const v = ts || new Date().toISOString();
+    await pool.query(`INSERT INTO ${SCHEMA}.meta(key,value) VALUES ('last_update',$1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, [v]);
+    return v;
   }
 
   async function getBans() {
@@ -204,6 +236,30 @@ if (process.env.USE_VEREL_KV === '1') {
     if (!Array.isArray(rows) || rows.length === 0) return null;
     const last = rows[rows.length - 1];
     return last.createdAt || last.createdAt;
+  }
+
+  async function getLastUpdateTimestamp() {
+    try {
+      const metaPath = path.join(path.dirname(filePath), 'meta.json');
+      const raw = await fs.readFile(metaPath, 'utf8').catch(() => '{}');
+      const meta = JSON.parse(raw || '{}');
+      return meta.last_update || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function setLastUpdateTimestamp(ts) {
+    const metaPath = path.join(path.dirname(filePath), 'meta.json');
+    const v = ts || new Date().toISOString();
+    let meta = {};
+    try {
+      const raw = await fs.readFile(metaPath, 'utf8').catch(() => '{}');
+      meta = JSON.parse(raw || '{}');
+    } catch (e) { meta = {}; }
+    meta.last_update = v;
+    await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf8');
+    return v;
   }
 
   async function getBans() {
