@@ -24,6 +24,15 @@ function getAllMessages() {
   });
 }
 
+function getLatestTimestamp() {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT createdAt FROM messages ORDER BY id DESC LIMIT 1', (err, row) => {
+      if (err) return resolve(null);
+      resolve(row && (row.createdAt || row.createdat) ? row.createdAt || row.createdat : null);
+    });
+  });
+}
+
 function getBans() {
   return new Promise((resolve) => {
     db.all("SELECT username FROM bans", (err, rows) => {

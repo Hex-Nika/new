@@ -8,6 +8,8 @@
     { "src": "/api/messages", "dest": "/api/messages" },
     { "src": "/bans", "dest": "/api/bans" },
     { "src": "/api/bans", "dest": "/api/bans" },
+    { "src": "/update", "dest": "/api/update" },
+    { "src": "/api/update", "dest": "/api/update" },
     { "src": "/admin/ban", "dest": "/api/admin" },
     { "src": "/admin/unban", "dest": "/api/admin" },
     { "src": "/api/admin/ban", "dest": "/api/admin" },

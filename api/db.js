@@ -49,6 +49,14 @@ if (process.env.USE_VEREL_KV === '1') {
     return msg;
   }
 
+  async function getLatestTimestamp() {
+    const next = await kv.get(`${PREFIX}:nextId`);
+    const lastId = next || 0;
+    if (!lastId) return null;
+    const m = await kv.get(`${PREFIX}:msg:${lastId}`);
+    return m && m.createdAt ? new Date(m.createdAt).toISOString() : null;
+  }
+
   async function getBans() {
     const ids = (await kv.get(`${PREFIX}:bans`)) || [];
     return ids;
@@ -122,6 +130,12 @@ if (process.env.USE_VEREL_KV === '1') {
     return res.rows;
   }
 
+  async function getLatestTimestamp() {
+    const res = await pool.query(`SELECT createdAt FROM ${SCHEMA}.messages ORDER BY id DESC LIMIT 1`);
+    if (res.rowCount === 0) return null;
+    return res.rows[0].createdat || res.rows[0].createdAt;
+  }
+
   async function getBans() {
     try {
       const r = await pool.query(`SELECT username FROM ${SCHEMA}.bans`);
@@ -183,6 +197,13 @@ if (process.env.USE_VEREL_KV === '1') {
     const rows = await readFile();
     // Return chronological order (oldest first)
     return rows.sort((a, b) => (a.id || 0) - (b.id || 0));
+  }
+
+  async function getLatestTimestamp() {
+    const rows = await readFile();
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const last = rows[rows.length - 1];
+    return last.createdAt || last.createdAt;
   }
 
   async function getBans() {
