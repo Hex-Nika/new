@@ -41,7 +41,7 @@ if (process.env.USE_VEREL_KV === '1') {
   async function addMessage({ author, content, blockId }) {
     const id = await kv.incr(`${PREFIX}:nextId`);
     const createdAt = new Date().toISOString();
-    const msg = { id, author: author || null, content, blockId: blockId || null, createdAt, ip: (typeof arguments[0] === 'object' && arguments[0].ip) || null };
+    const msg = { id, author: author || null, content, blockId: blockId || null, createdAt };
     await kv.set(`${PREFIX}:msg:${id}`, msg);
     const ids = (await kv.get(`${PREFIX}:ids`)) || [];
     ids.push(id);
@@ -190,8 +190,8 @@ if (process.env.USE_VEREL_KV === '1') {
 
   async function addMessage({ author, content, blockId }) {
     const res = await pool.query(
-      `INSERT INTO ${SCHEMA}.messages (author, content, blockId, ip, createdAt) VALUES ($1,$2,$3,$4,now()) RETURNING *`,
-      [author || null, content, blockId || null, (arguments[0] && arguments[0].ip) || null]
+      `INSERT INTO ${SCHEMA}.messages (author, content, blockId, createdAt) VALUES ($1,$2,$3,now()) RETURNING *`,
+      [author || null, content, blockId || null]
     );
     console.log(`[codetorch] addMessage -> inserted id=${res.rows[0] && res.rows[0].id}`);
     return res.rows[0];
@@ -314,7 +314,7 @@ if (process.env.USE_VEREL_KV === '1') {
     const maxId = rows.reduce((max, r) => Math.max(max, r.id || 0), 0);
     const id = maxId + 1;
     const createdAt = new Date().toISOString();
-    const msg = { id, author: author || null, content, blockId: blockId || null, createdAt, ip: (arguments[0] && arguments[0].ip) || null };
+    const msg = { id, author: author || null, content, blockId: blockId || null, createdAt };
     rows.push(msg);
     await writeFile(rows);
     return msg;
