@@ -71,7 +71,7 @@ app.get('/bans', async (req, res) => {
 app.post('/messages', async (req, res) => {
   let { author, content, blockId } = req.body || {};
   // capture IP: prefer X-Forwarded-For then connection remoteAddress
-  const ip = (req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean)[0] || req.socket && (req.socket.remoteAddress || req.connection && req.connection.remoteAddress) || null;
+  const ip = (req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean)[0] || (req.socket && (req.socket.remoteAddress || (req.connection && req.connection.remoteAddress))) || null;
   // Accept raw string body as content
   if (typeof req.body === 'string' && !content) {
     content = req.body;
@@ -102,7 +102,8 @@ app.post('/messages', async (req, res) => {
     const { sanitizeText } = require('./filter');
     const safeAuthor = author ? sanitizeText(author) : null;
     const safeContent = sanitizeText(content);
-    const saved = await db.addMessage({ author: safeAuthor, content: safeContent, blockId, ip });
+    const finalBlockId = blockId || ip || null;
+    const saved = await db.addMessage({ author: safeAuthor, content: safeContent, blockId: finalBlockId });
     res.status(201).json(saved);
   } catch (err) {
     res.status(500).json({ error: err.message });
