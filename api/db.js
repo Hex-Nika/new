@@ -90,9 +90,7 @@ if (process.env.USE_VEREL_KV === '1') {
     return uname;
   }
 
-  module.exports = { getAllMessages, addMessage, getBans, addBan, removeBan };
-
-  module.exports = { getAllMessages, addMessage };
+  module.exports = { getAllMessages, addMessage, getBans, addBan, removeBan, getLastUpdateTimestamp, setLastUpdateTimestamp };
 
 } else if (CONNECTION_STRING) {
   // Use Postgres (Supabase) when a connection string is available
@@ -199,7 +197,7 @@ if (process.env.USE_VEREL_KV === '1') {
     return res.rows[0];
   }
 
-  module.exports = { getAllMessages, addMessage, getBans, addBan, removeBan };
+  module.exports = { getAllMessages, addMessage, getBans, addBan, removeBan, getLastUpdateTimestamp, setLastUpdateTimestamp };
 
 } else {
   // Persist to project file when running locally; use /tmp on Vercel (ephemeral).
@@ -322,5 +320,5 @@ if (process.env.USE_VEREL_KV === '1') {
     return msg;
   }
 
-  module.exports = { getAllMessages, addMessage };
+  module.exports = { getAllMessages, addMessage, getBans, addBan, removeBan, getLastUpdateTimestamp, setLastUpdateTimestamp };
 }

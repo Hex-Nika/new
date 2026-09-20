@@ -12,6 +12,16 @@ db.serialize(() => {
     blockId TEXT,
     createdAt TEXT NOT NULL
   )`);
+  db.run(`CREATE TABLE IF NOT EXISTS meta (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS bans (
+    username TEXT PRIMARY KEY,
+    reason TEXT,
+    createdAt TEXT
+  )`);
 });
 
 function getAllMessages() {
@@ -45,7 +55,7 @@ function getLastUpdateTimestamp() {
 function setLastUpdateTimestamp(ts) {
   return new Promise((resolve, reject) => {
     const v = ts || new Date().toISOString();
-    db.run("INSERT INTO meta(key,value) VALUES ('last_update',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [v], function(err) {
+    db.run('INSERT OR REPLACE INTO meta (key, value) VALUES (?,?)', ['last_update', v], function(err) {
       if (err) return reject(err);
       resolve(v);
     });
@@ -93,4 +103,4 @@ function addMessage({ author, content, blockId }) {
   });
 }
 
-module.exports = { getAllMessages, addMessage };
+module.exports = { getAllMessages, addMessage, getBans, addBan, removeBan, getLatestTimestamp, getLastUpdateTimestamp, setLastUpdateTimestamp };
