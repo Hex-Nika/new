@@ -26,8 +26,17 @@ function maskWord(word) {
 }
 
 function sanitizeText(text) {
-  if (!text || !BAD_RE) return text;
-  return String(text).replace(BAD_RE, (m) => maskWord(m));
+  if (!text) return text;
+  // Remove links first: markdown links [label](url) -> label, angle-bracketed <url> -> '', plain urls -> ''
+  let s = String(text);
+  // Replace markdown links [label](url) with just the label
+  s = s.replace(/\[([^\]]+)\]\((?:\s*<?(?:https?:\/\/|www\.)[^)\s>]+>?\s*)\)/ig, '$1');
+  // Remove angle-bracketed URLs like <https://example.com>
+  s = s.replace(/<\s*(?:https?:\/\/|www\.)[^>]+>/ig, '');
+  // Remove plain URLs starting with http://, https:// or www.
+  s = s.replace(/(?:https?:\/\/|www\.)\S+/ig, '');
+  if (!BAD_RE) return s;
+  return s.replace(BAD_RE, (m) => maskWord(m));
 }
 
 module.exports = { sanitizeText, BAD_WORDS };
