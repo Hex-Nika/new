@@ -113,7 +113,9 @@ module.exports = async (req, res) => {
       const { sanitizeText } = require(path.join(__dirname, '..', '..', 'filter'));
       const safeAuthor = author ? sanitizeText(author) : null;
       const safeContent = sanitizeText(finalContent);
-      const saved = await db.addMessage({ author: safeAuthor, content: safeContent, blockId });
+      // capture IP from headers (X-Forwarded-For) or connection
+      const ip = (req.headers && (req.headers['x-forwarded-for'] || req.headers['x-real-ip'])) ? String((req.headers['x-forwarded-for'] || req.headers['x-real-ip']).split(',')[0]).trim() : (req.socket && (req.socket.remoteAddress || (req.connection && req.connection.remoteAddress))) || null;
+      const saved = await db.addMessage({ author: safeAuthor, content: safeContent, blockId, ip });
       res.statusCode = 201;
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify(saved));
