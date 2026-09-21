@@ -59,9 +59,17 @@ module.exports = async (req, res) => {
       const since = req.query && req.query.since ? parseInt(req.query.since, 10) : null;
       if (since) messages = messages.filter(m => (m.id || 0) > since);
 
+      const PAGE_SIZE = 13;
+      const page = req.query && req.query.page ? Math.max(1, parseInt(req.query.page, 10) || 1) : null;
       const offset = req.query && req.query.offset ? Math.max(0, parseInt(req.query.offset, 10) || 0) : 0;
       const limit = req.query && req.query.limit ? Math.max(0, parseInt(req.query.limit, 10) || 0) : null;
-      if (limit && limit > 0) {
+
+      if (page) {
+        // page 1 => most recent PAGE_SIZE messages
+        const end = messages.length - (page - 1) * PAGE_SIZE;
+        const start = Math.max(0, end - PAGE_SIZE);
+        messages = messages.slice(start, Math.max(0, end));
+      } else if (limit && limit > 0) {
         if (offset) {
           messages = messages.slice(offset);
           messages = messages.slice(0, limit);
