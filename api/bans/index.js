@@ -5,7 +5,14 @@ if (!process.env.VERCEL) db = require(path.join(__dirname, '..', '..', 'db'));
 else db = require(path.join(__dirname, '..', 'db'));
 
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const ALLOWED_ORIGIN = 'https://codetorch.net/projects/216575';
+  const origin = req.headers.origin || req.headers.referer || '';
+  if (origin && origin.indexOf(ALLOWED_ORIGIN) === -1) {
+    res.statusCode = 401;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ error: 'unauthorized' }));
+  }
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.statusCode = 204 && res.end();
