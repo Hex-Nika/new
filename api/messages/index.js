@@ -1,6 +1,5 @@
 const path = require('path');
 const os = require('os');
-const fs = require('fs');
 
 // Use project DB when running locally (not Vercel); otherwise use the lightweight JSON DB.
 let db;
@@ -87,30 +86,7 @@ module.exports = async (req, res) => {
         return res.end(JSON.stringify(messages));
       }
 
-      // Load tags.json to apply optional prefixes for specific usernames
-      let tags = {};
-      try {
-        const tagsPath = path.join(__dirname, '..', '..', 'tags.json');
-        if (fs.existsSync(tagsPath)) {
-          const raw = fs.readFileSync(tagsPath, 'utf8');
-          const parsed = JSON.parse(raw || '{}');
-          if (parsed && typeof parsed === 'object') {
-            Object.keys(parsed).forEach(k => {
-              const v = parsed[k];
-              if (typeof v === 'string' && v.trim()) tags[String(k).toLowerCase()] = v.trim();
-            });
-          }
-        }
-      } catch (e) {
-        tags = {};
-      }
-
-      const formatted = messages.map(m => {
-        const authorLabel = m.author || 'anonymous';
-        const prefix = tags[(m.author || '').toLowerCase()];
-        if (prefix) return `${prefix} - ${authorLabel}: ${m.content}`;
-        return `${authorLabel}: ${m.content}`;
-      });
+      const formatted = messages.map(m => `${m.author || 'anonymous'}: ${m.content}`);
       res.setHeader('Content-Type', 'application/json');
       return res.end(JSON.stringify(formatted));
     }
