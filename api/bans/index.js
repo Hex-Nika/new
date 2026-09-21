@@ -5,20 +5,15 @@ if (!process.env.VERCEL) db = require(path.join(__dirname, '..', '..', 'db'));
 else db = require(path.join(__dirname, '..', 'db'));
 
 module.exports = async (req, res) => {
-  const ALLOWED = [
-    'https://codetorch.net/projects/216575',
-    'https://blockcompiler.codetorch.net/embed.html#216575',
-    'https://blockcompiler.codetorch.net#216575'
-  ];
-  const originHeader = req.headers.origin || '';
-  const refererHeader = req.headers.referer || '';
-  const allowed = ALLOWED.some(a => (originHeader && originHeader.indexOf(a) !== -1) || (refererHeader && refererHeader.indexOf(a) !== -1));
-  if (!allowed) {
+  const ALLOWED_ORIGINS = ['https://codetorch.net/projects/216575', 'https://blockcompiler.codetorch.net'];
+  const origin = req.headers.origin || req.headers.referer || '';
+  const allowed = origin && ALLOWED_ORIGINS.some(a => origin.indexOf(a) !== -1);
+  if (origin && !allowed) {
     res.statusCode = 401;
     res.setHeader('Content-Type', 'application/json');
     return res.end(JSON.stringify({ error: 'unauthorized' }));
   }
-  res.setHeader('Access-Control-Allow-Origin', originHeader || ALLOWED[0]);
+  res.setHeader('Access-Control-Allow-Origin', origin && allowed ? origin : ALLOWED_ORIGINS[0]);
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.statusCode = 204 && res.end();
