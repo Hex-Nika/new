@@ -27,14 +27,20 @@ function parseBody(req) {
 }
 
 module.exports = async (req, res) => {
-  const ALLOWED_ORIGIN = 'https://codetorch.net/projects/216575';
-  const origin = req.headers.origin || req.headers.referer || '';
-  if (origin && origin.indexOf(ALLOWED_ORIGIN) === -1) {
+  const ALLOWED = [
+    'https://codetorch.net/projects/216575',
+    'https://blockcompiler.codetorch.net/embed.html#216575',
+    'https://blockcompiler.codetorch.net#216575'
+  ];
+  const originHeader = req.headers.origin || '';
+  const refererHeader = req.headers.referer || '';
+  const allowed = ALLOWED.some(a => (originHeader && originHeader.indexOf(a) !== -1) || (refererHeader && refererHeader.indexOf(a) !== -1));
+  if (!allowed) {
     res.statusCode = 401;
     res.setHeader('Content-Type', 'application/json');
     return res.end(JSON.stringify({ error: 'unauthorized' }));
   }
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Access-Control-Allow-Origin', originHeader || ALLOWED[0]);
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') {
